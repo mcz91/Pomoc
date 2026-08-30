@@ -8,9 +8,20 @@ do czasu pozytywnego kill-testu; wejście pod Foundry jest jawnym punktem decyzy
 
 ## 1. Cel i zakres
 
-**Cel MVP:** przeprowadzić kill-test tezy „ocena ważona zaufaniem znajomych bije anonimowe
-gwiazdki” — w 12 tygodni, w jednym mieście, w jednej kategorii, na zamkniętej grupie
-zaproszonych użytkowników.
+**Pozycjonowanie — zasada babci.** Produkt nie sprzedaje „lepszych recenzji”, tylko
+**personalizację**: chcesz iść gdzie indziej niż twoja babcia, a jedna wspólna średnia nie
+potrafi tego powiedzieć. Miejsce z oceną 4,6 od tysiąca obcych to informacja o wszystkich
+i o nikim. Ta sama Starówka wygląda inaczej dla dwudziestolatka i dla wycieczki autokarowej —
+i to jest cała teza.
+
+Konsekwencja techniczna jest twarda i obowiązuje wszędzie: **nigdzie nie liczymy ani nie
+pokazujemy średniej globalnej miejsca.** Każda liczba na ekranie jest czyjaś — moja albo
+moich znajomych, ważona zbieżnością gustu. Miejsce bez sygnału zostaje bez liczby; nie
+podstawiamy w to miejsce popularności. Reguła jest zapisana w komentarzu migracji
+`0003_ranking.sql` i pilnowana testem (`supabase/tests/ranking_test.sql`).
+
+**Cel MVP:** kill-test tezy „ocena ważona zaufaniem znajomych bije anonimowe gwiazdki” —
+w 12 tygodni, na zamkniętej grupie zaproszonych.
 
 **Teza produktowa:** mapa miejsc, na której każde miejsce ma trzy warstwy sygnału:
 1. **mój ranking** (tożsamość gustu — wartość przy zerze znajomych),
@@ -18,9 +29,12 @@ zaproszonych użytkowników.
 3. **predykcja z podobieństwa gustu** (skala — poza zakresem MVP).
 
 **Zakres startowy:**
-- jedno miasto (parametr `city`, decyzja operacyjna przed T1 — miasto, w którym founder ma ekipę),
-- jedna kategoria-wabik: **gastro** (jedzenie; osobny ranking dla „kawa” i „drink/impreza”
-  jako kategorie drugorzędne — porównania parowe mają sens tylko wewnątrz kategorii),
+- **Gdańsk, Starówka** — Główne Miasto, Stare Miasto, Wyspa Spichrzów
+  (bbox `18.638, 54.340 → 18.672, 54.360`). Poligon wybrany celowo: gęsta scena w promieniu
+  spaceru, gdzie „turystyczna pułapka obok miejsca dla swoich” jest doświadczeniem
+  codziennym — czyli dokładnie tam, gdzie różnica między moją oceną a średnią boli najbardziej;
+- jedna kategoria-wabik: **gastro** (`food`; `cafe` i `drinks` jako drugorzędne — porównania
+  parowe mają sens wyłącznie wewnątrz kategorii),
 - invite-only (kody zaproszeń, graf znajomych budowany wyłącznie zaproszeniami),
 - platformy: iOS + Android z jednego kodu.
 
@@ -181,7 +195,18 @@ Zapytanie mapy (viewport): miejsca w bbox + trzy agregaty per miejsce
 (≤50 znajomych, ≤500 miejsc w viewport) liczone na żywo jednym SQL-em —
 materializacja per viewer to optymalizacja po walidacji, nie przed.
 
-### 5.3 Co jawnie odroczone
+### 5.3 Stan implementacji (T1)
+
+Zweryfikowane na żywym Postgresie 16 + PostGIS (`tools/run_db_tests.sh`, 18 asercji):
+przeliczanie score z pozycji, przenoszenie miejsc między kubełkami z domknięciem luki,
+tau Kendalla (zgodny gust `1.0`, przeciwny `-1.0`), wagi głosów (`1.0` / `0.5`, nigdy zero),
+brak wyniku przy braku sygnału. Kluczowy test dowodzi zasady babci wprost: **ten sam lokal
+ma `8.9` u wnuka i `10.0` u babci**, bo każde z nich patrzy przez własny graf.
+
+Pętla pojedynków (`app/lib/ranking.ts`) ma własne testy (`npm test` w `app/`): każda pozycja
+w kubełku 40 miejsc znajdowana w ≤6 pytaniach, pominięcie kończy serię, brak zapętleń.
+
+### 5.4 Co jawnie odroczone
 
 Rec score z filtrowania kolaboratywnego na obcych, ważenie świeżości ocen,
 odporność na shilling (przy invite-only grafie problem nie istnieje — wraca

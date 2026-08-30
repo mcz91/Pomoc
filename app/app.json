@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Mapa Znajomych",
+    "slug": "mapa-znajomych",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "mapaznajomych",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "app.mapaznajomych",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Pokazujemy, gdzie jesteś na mapie. Nie zapisujemy twojej lokalizacji i nie udostępniamy jej nikomu."
+      }
+    },
+    "android": {
+      "package": "app.mapaznajomych",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": ["expo-dev-client", "@maplibre/maplibre-react-native"],
+    "extra": {
+      "city": "gdansk",
+      "bbox": [18.638, 54.34, 18.672, 54.36]
+    }
+  }
+}
