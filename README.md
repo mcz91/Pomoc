@@ -9,3 +9,4 @@ Status: rozkmina.
 - Część III — sensowność przedsięwzięcia solo (founder + fabryka LLM): [docs/rozkmina-2026-08-czesc-3-sensownosc-solo.md](docs/rozkmina-2026-08-czesc-3-sensownosc-solo.md)
 - Część IV — techniczny zarys projektu (architektura, model danych, prawo, kontrakty K1–K8): [docs/rozkmina-2026-08-czesc-4-zarys-techniczny.md](docs/rozkmina-2026-08-czesc-4-zarys-techniczny.md)
 - Część V — plan pilotażu: Gdańsk Zaspa, integracja emerytów ze studentami: [docs/rozkmina-2026-08-czesc-5-plan-pilotazu-zaspa.md](docs/rozkmina-2026-08-czesc-5-plan-pilotazu-zaspa.md)
+- Część VI — sedno, komunikacja do obu grup, mechanika wiralu: [docs/rozkmina-2026-08-czesc-6-sedno-i-wiral.md](docs/rozkmina-2026-08-czesc-6-sedno-i-wiral.md)
