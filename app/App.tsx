@@ -4,12 +4,11 @@ import { Modal, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-url-polyfill/auto';
 
-import { MapPlace } from './lib/scores';
-import MapScreen from './screens/MapScreen';
+import MapScreen, { SelectedPlace } from './screens/MapScreen';
 import RankingFlow from './screens/RankingFlow';
 
 export default function App() {
-  const [ranking, setRanking] = useState<MapPlace | null>(null);
+  const [ranking, setRanking] = useState<SelectedPlace | null>(null);
 
   return (
     <SafeAreaProvider>

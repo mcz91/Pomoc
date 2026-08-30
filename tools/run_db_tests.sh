@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Stawia czystą bazę testową, ładuje migracje i uruchamia testy SQL.
-# Wymaga lokalnego Postgresa z PostGIS. Nie dotyka bazy produkcyjnej.
+# Stawia czystą bazę testową, ładuje migracje i uruchamia testy pgTAP przez pg_prove.
+# Wymaga: Postgres 16 z PostGIS i pgTAP oraz pg_prove. Nie dotyka bazy produkcyjnej.
 set -euo pipefail
 
 DB="${TEST_DB:-mapa_test}"
-PSQL=(psql -v ON_ERROR_STOP=1 -q)
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PSQL=(psql -v ON_ERROR_STOP=1 -q -d "$DB")
 
 dropdb --if-exists "$DB"
 createdb "$DB"
 
-# Supabase dostarcza schemat auth w środowisku docelowym; lokalnie stawiamy
-# minimalny odpowiednik, żeby te same migracje przeszły bez modyfikacji.
-"${PSQL[@]}" -d "$DB" <<'SQL'
+# Supabase dostarcza schemat auth i rolę authenticated w środowisku docelowym;
+# lokalnie stawiamy minimalny odpowiednik, żeby te same migracje przeszły bez zmian.
+"${PSQL[@]}" <<'SQL'
+create extension if not exists pgtap;
 create schema if not exists auth;
 create table auth.users (id uuid primary key);
 
@@ -23,7 +24,7 @@ language sql stable as $$
 $$;
 
 create or replace function set_actor(actor uuid) returns void
-language sql as $$ select set_config('test.actor', actor::text, false); $$;
+language sql as $$ select set_config('test.actor', coalesce(actor::text, ''), true); $$;
 
 do $$ begin
   create role authenticated;
@@ -32,9 +33,12 @@ end $$;
 SQL
 
 for migration in "$ROOT"/supabase/migrations/*.sql; do
-  echo "== $(basename "$migration")"
-  "${PSQL[@]}" -d "$DB" -f "$migration"
+  "${PSQL[@]}" -f "$migration"
 done
 
-echo "== testy"
-"${PSQL[@]}" -d "$DB" -f "$ROOT/supabase/tests/ranking_test.sql"
+# Rola authenticated musi móc czytać tabele — dostęp zawęża dopiero RLS.
+"${PSQL[@]}" -c "grant usage on schema public, auth to authenticated;
+                 grant select, insert, update, delete on all tables in schema public to authenticated;
+                 grant execute on all functions in schema public to authenticated;"
+
+pg_prove --ext .sql -d "$DB" "$ROOT"/supabase/tests/*.sql

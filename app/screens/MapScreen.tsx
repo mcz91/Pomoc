@@ -1,9 +1,15 @@
 import MapLibreGL from '@maplibre/maplibre-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import {
+  MapPlace,
+  PlaceFeature,
+  TONE_COLORS,
+  parseMapPlaces,
+  toFeatureCollection,
+} from '../lib/scores';
 import { supabase } from '../lib/supabase';
-import { MapPlace, pinColor, scoreLabel, signalCaption, signalOf } from '../lib/scores';
 
 // Kafle bez klucza i bez limitu — zamiana na własny hosting PMTiles nie rusza kodu.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
@@ -11,8 +17,25 @@ const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 // Długi Targ; kill-test toczy się w promieniu spaceru od tego punktu.
 const STAROWKA: [number, number] = [18.6534, 54.3487];
 
+// Kolor pinezki wybiera silnik stylów po właściwości `tone` — bez przeliczania w JS.
+const TONE_MATCH: (string | string[])[] = [
+  'match',
+  ['get', 'tone'],
+  'mine',
+  TONE_COLORS.mine,
+  'high',
+  TONE_COLORS.high,
+  'mid',
+  TONE_COLORS.mid,
+  'low',
+  TONE_COLORS.low,
+  TONE_COLORS.none,
+];
+
+export type SelectedPlace = Pick<PlaceFeature['properties'], 'id' | 'name' | 'category'>;
+
 type Props = {
-  onSelect: (place: MapPlace) => void;
+  onSelect: (place: SelectedPlace) => void;
 };
 
 export default function MapScreen({ onSelect }: Props) {
@@ -33,8 +56,14 @@ export default function MapScreen({ onSelect }: Props) {
       setError('Nie udało się wczytać miejsc. Pociągnij mapę, żeby spróbować ponownie.');
       return;
     }
-    setError(null);
-    setPlaces(data ?? []);
+    try {
+      setPlaces(parseMapPlaces(data));
+      setError(null);
+    } catch {
+      // Zmieniony kształt odpowiedzi jest błędem, nie pustą mapą — nie udajemy,
+      // że w tej okolicy po prostu nikogo nie było.
+      setError('Nieoczekiwana odpowiedź serwera. Zaktualizuj aplikację.');
+    }
   }, []);
 
   useEffect(() => {
@@ -50,6 +79,18 @@ export default function MapScreen({ onSelect }: Props) {
     [load],
   );
 
+  const collection = useMemo(() => toFeatureCollection(places), [places]);
+
+  const onPress = useCallback(
+    (event: { features?: { properties?: Record<string, unknown> }[] }) => {
+      const hit = event.features?.[0]?.properties;
+      // Kliknięcie w klaster obsługuje mapa (zoom), nas interesuje pojedynczy lokal.
+      if (!hit || typeof hit.id !== 'string') return;
+      onSelect(hit as SelectedPlace);
+    },
+    [onSelect],
+  );
+
   return (
     <View style={styles.container}>
       <MapLibreGL.MapView
@@ -61,23 +102,73 @@ export default function MapScreen({ onSelect }: Props) {
       >
         <MapLibreGL.Camera defaultSettings={{ centerCoordinate: STAROWKA, zoomLevel: 15.5 }} />
 
-        {places.map((place) => {
-          const signal = signalOf(place);
-          return (
-            <MapLibreGL.MarkerView
-              key={place.id}
-              id={place.id}
-              coordinate={[place.lon, place.lat]}
-            >
-              <Pin
-                place={place}
-                color={pinColor(signal)}
-                label={scoreLabel(signal)}
-                onPress={() => onSelect(place)}
-              />
-            </MapLibreGL.MarkerView>
-          );
-        })}
+        {/* Klastrowanie robi silnik mapy: setki lokali to jedno źródło danych,
+            a nie setki komponentów Reacta. */}
+        <MapLibreGL.ShapeSource
+          id="places"
+          shape={collection}
+          cluster
+          clusterRadius={45}
+          clusterMaxZoomLevel={16}
+          onPress={onPress}
+        >
+          <MapLibreGL.CircleLayer
+            id="clusters"
+            filter={['has', 'point_count']}
+            style={{
+              circleColor: '#232F33',
+              circleOpacity: 0.9,
+              circleRadius: ['step', ['get', 'point_count'], 16, 10, 20, 30, 26],
+              circleStrokeWidth: 2,
+              circleStrokeColor: '#FBFCFA',
+            }}
+          />
+          <MapLibreGL.SymbolLayer
+            id="cluster-count"
+            filter={['has', 'point_count']}
+            style={{
+              textField: ['get', 'point_count_abbreviated'],
+              textSize: 13,
+              textColor: '#FBFCFA',
+              textFont: ['Noto Sans Bold'],
+            }}
+          />
+
+          {/* Lokal bez sygnału jest mniejszy i bez etykiety — brak liczby to
+              informacja sama w sobie, nie miejsce na średnią z internetu. */}
+          <MapLibreGL.CircleLayer
+            id="place-dot"
+            filter={['!', ['has', 'point_count']]}
+            style={{
+              circleColor: TONE_MATCH,
+              circleRadius: ['case', ['==', ['get', 'tone'], 'none'], 6, 14],
+              circleStrokeWidth: 2,
+              circleStrokeColor: '#FBFCFA',
+            }}
+          />
+          <MapLibreGL.SymbolLayer
+            id="place-score"
+            filter={['all', ['!', ['has', 'point_count']], ['!=', ['get', 'label'], '']]}
+            style={{
+              textField: ['get', 'label'],
+              textSize: 12,
+              textColor: '#FBFCFA',
+              textFont: ['Noto Sans Bold'],
+              textAllowOverlap: true,
+            }}
+          />
+          <MapLibreGL.CircleLayer
+            id="want-to-try"
+            filter={['all', ['!', ['has', 'point_count']], ['==', ['get', 'wantToTry'], true]]}
+            style={{
+              circleColor: '#C7402D',
+              circleRadius: 4,
+              circleTranslate: [12, -12],
+              circleStrokeWidth: 1.5,
+              circleStrokeColor: '#FBFCFA',
+            }}
+          />
+        </MapLibreGL.ShapeSource>
       </MapLibreGL.MapView>
 
       {loading && <ActivityIndicator style={styles.overlay} size="large" />}
@@ -90,59 +181,10 @@ export default function MapScreen({ onSelect }: Props) {
   );
 }
 
-function Pin({
-  place,
-  color,
-  label,
-  onPress,
-}: {
-  place: MapPlace;
-  color: string;
-  label: string;
-  onPress: () => void;
-}) {
-  const signal = signalOf(place);
-  return (
-    <View
-      accessibilityRole="button"
-      accessibilityLabel={`${place.name}. ${signalCaption(signal)}`}
-      onTouchEnd={onPress}
-      style={[styles.pin, { backgroundColor: color }, label === '' && styles.pinEmpty]}
-    >
-      {/* Brak liczby jest informacją samą w sobie: nikt z twoich tu nie był. */}
-      {label !== '' && <Text style={styles.pinText}>{label}</Text>}
-      {place.want_to_try && <View style={styles.wantDot} />}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
   overlay: { position: 'absolute', top: '50%', alignSelf: 'center' },
-  pin: {
-    minWidth: 34,
-    height: 26,
-    paddingHorizontal: 6,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FBFCFA',
-  },
-  pinEmpty: { minWidth: 14, height: 14, borderRadius: 7, opacity: 0.75 },
-  pinText: { color: '#FBFCFA', fontWeight: '700', fontSize: 13 },
-  wantDot: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: '#C7402D',
-    borderWidth: 1.5,
-    borderColor: '#FBFCFA',
-  },
   banner: {
     position: 'absolute',
     left: 16,

@@ -7,17 +7,33 @@
  * pinezka zostaje bez liczby; nie podstawiamy w to miejsce popularności.
  */
 
-export type MapPlace = {
-  id: string;
-  name: string;
-  category: 'food' | 'cafe' | 'drinks' | 'culture' | 'chill' | 'other';
-  lon: number;
-  lat: number;
-  my_score: number | null;
-  friend_score: number | null;
-  friend_count: number;
-  want_to_try: boolean;
-};
+import { z } from 'zod';
+
+export const CATEGORIES = ['food', 'cafe', 'drinks', 'culture', 'chill', 'other'] as const;
+export type Category = (typeof CATEGORIES)[number];
+
+/**
+ * Kształt wiersza z `map_places`. Walidujemy go na granicy, bo RPC zwraca `any`,
+ * a cicho zgubione pole (np. friend_score) objawiłoby się jako pinezka bez
+ * liczby — czyli fałszywym komunikatem "nikt tu nie był".
+ */
+export const MapPlaceSchema = z.object({
+  id: z.guid(),
+  name: z.string(),
+  category: z.enum(CATEGORIES),
+  lon: z.number(),
+  lat: z.number(),
+  my_score: z.number().nullable(),
+  friend_score: z.coerce.number().nullable(),
+  friend_count: z.number().int().nonnegative(),
+  want_to_try: z.boolean(),
+});
+
+export type MapPlace = z.infer<typeof MapPlaceSchema>;
+
+export function parseMapPlaces(rows: unknown): MapPlace[] {
+  return z.array(MapPlaceSchema).parse(rows ?? []);
+}
 
 export type Signal =
   | { kind: 'mine'; score: number }
@@ -50,18 +66,51 @@ export function signalCaption(signal: Signal): string {
   }
 }
 
-const PALETTE = {
+/** Ton pinezki. Nazwy, nie kolory — paletę trzyma warstwa mapy. */
+export type Tone = 'mine' | 'high' | 'mid' | 'low' | 'none';
+
+export function toneOf(signal: Signal): Tone {
+  if (signal.kind === 'none') return 'none';
+  if (signal.kind === 'mine') return 'mine';
+  if (signal.score >= 8) return 'high';
+  if (signal.score >= 6) return 'mid';
+  return 'low';
+}
+
+export const TONE_COLORS: Record<Tone, string> = {
   mine: '#0E6E66',
   high: '#2E7D46',
   mid: '#A96A0C',
   low: '#C7402D',
   none: '#8A9698',
-} as const;
+};
 
-export function pinColor(signal: Signal): string {
-  if (signal.kind === 'none') return PALETTE.none;
-  if (signal.kind === 'mine') return PALETTE.mine;
-  if (signal.score >= 8) return PALETTE.high;
-  if (signal.score >= 6) return PALETTE.mid;
-  return PALETTE.low;
+export type PlaceFeature = GeoJSON.Feature<
+  GeoJSON.Point,
+  { id: string; name: string; category: Category; label: string; tone: Tone; wantToTry: boolean }
+>;
+
+/** Mapa dostaje jedno źródło GeoJSON i sama klastruje — bez markerów per lokal. */
+export function toFeatureCollection(
+  places: MapPlace[],
+): GeoJSON.FeatureCollection<GeoJSON.Point, PlaceFeature['properties']> {
+  return {
+    type: 'FeatureCollection',
+    features: places.map((place) => {
+      const signal = signalOf(place);
+      return {
+        type: 'Feature',
+        id: place.id,
+        geometry: { type: 'Point', coordinates: [place.lon, place.lat] },
+        properties: {
+          id: place.id,
+          name: place.name,
+          category: place.category,
+          label: scoreLabel(signal),
+          tone: toneOf(signal),
+          wantToTry: place.want_to_try,
+        },
+      };
+    }),
+  };
 }
