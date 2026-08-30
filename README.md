@@ -8,3 +8,4 @@ Status: rozkmina.
 - Część II — pogłębienie (kanał B2B2C w PL, teardown nebenan/Nextdoor, incumbenci, ubezpieczenia, sizing, Karrot): [docs/rozkmina-2026-08-czesc-2-poglebienie.md](docs/rozkmina-2026-08-czesc-2-poglebienie.md)
 - Część III — sensowność przedsięwzięcia solo (founder + fabryka LLM): [docs/rozkmina-2026-08-czesc-3-sensownosc-solo.md](docs/rozkmina-2026-08-czesc-3-sensownosc-solo.md)
 - Część IV — techniczny zarys projektu (architektura, model danych, prawo, kontrakty K1–K8): [docs/rozkmina-2026-08-czesc-4-zarys-techniczny.md](docs/rozkmina-2026-08-czesc-4-zarys-techniczny.md)
+- Część V — plan pilotażu: Gdańsk Zaspa, integracja emerytów ze studentami: [docs/rozkmina-2026-08-czesc-5-plan-pilotazu-zaspa.md](docs/rozkmina-2026-08-czesc-5-plan-pilotazu-zaspa.md)

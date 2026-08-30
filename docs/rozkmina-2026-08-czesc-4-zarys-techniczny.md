@@ -135,7 +135,7 @@ Praca ludzka nierównoległa do fabryki: DPIA + regulamin + polityka prywatnośc
 
 ## 12. Otwarte decyzje i BRAKi
 
-- BRAK decyzji: miasto/osiedle pilotażowe (rekomendacja z części III: własne) — determinuje poligon K3 i próg aktywacji.
+- ~~BRAK decyzji: miasto/osiedle pilotażowe~~ — rozstrzygnięte: Gdańsk Zaspa, z osią integracji emerytów ze studentami; delta zakresu w [części V](rozkmina-2026-08-czesc-5-plan-pilotazu-zaspa.md) §7.
 - BRAK decyzji: nazwa produktu i domena (potrzebna do K2).
 - Do kalibracji po pilocie: progi weryfikacji (publikacja od L1 / branie od L2), retencja danych (12 mies.?), próg aktywacji osiedla (<100 na pilocie własnym?).
 - BRAK danych: cenniki eID (Authologic/mojeID — wyceny indywidualne) — nieblokujące, faza 2.
