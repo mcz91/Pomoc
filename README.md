@@ -2,7 +2,11 @@
 
 Hiperlokalna tablica drobnych zadań sąsiedzkich: wrzucasz „wyrzucić śmieci / rozwiesić pranie / wywiercić dziurę", sąsiad bierze — za wynagrodzenie albo za darmo. Swobodniej niż Glovo/TaskRabbit, zasięg osiedla.
 
-Status: rozkmina.
+Status: rozkmina zamknięta dokumentem przekazania.
+
+**Wejście dla architekta produktu:** [docs/USTALENIA-DLA-ARCHITEKTA.md](docs/USTALENIA-DLA-ARCHITEKTA.md) — skonsolidowane decyzje, ograniczenia z badań, wymagania W1–W9, sekwencja kontraktów K1–K8, metryki kill/go, otwarte BRAK-i.
+
+Części rozkminy (uzasadnienia i źródła):
 
 - Część I — badanie rynku, ranking konkurencji, analiza biznesowa: [docs/rozkmina-2026-08-badanie-rynku.md](docs/rozkmina-2026-08-badanie-rynku.md)
 - Część II — pogłębienie (kanał B2B2C w PL, teardown nebenan/Nextdoor, incumbenci, ubezpieczenia, sizing, Karrot): [docs/rozkmina-2026-08-czesc-2-poglebienie.md](docs/rozkmina-2026-08-czesc-2-poglebienie.md)
