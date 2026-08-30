@@ -2,6 +2,8 @@
 
 Stan danych: sierpień 2026. Liczby oznaczone „szacunek" pochodzą z danych wtórnych, nieaudytowanych.
 
+> Aktualizacja: [część II (pogłębienie)](rozkmina-2026-08-czesc-2-poglebienie.md) koryguje wniosek o hybrydach — Karrot/Daangn (Korea) łączy darmową wymianę i płatne fuchy w jednej apce (w osobnych modułach) i jest rentowny. Sformułowania „biała plama / nikt nie połączył" poniżej czytaj z tą poprawką.
+
 ## 1. Koncept
 
 Hiperlokalna tablica drobnych zadań: mieszkaniec wrzuca ogłoszenie („wyrzucę śmieci przy okazji?", „rozwiesić pranie", „wywiercić dziurę", „przynieść zakupy"), sąsiad je bierze — **za wynagrodzenie albo za darmo**, według uznania stron. Swobodniej niż Glovo/TaskRabbit: bez sztywnych kategorii, bez wymogu profesjonalizmu, zasięg osiedla/dzielnicy.
